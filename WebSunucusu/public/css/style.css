@@ -1,0 +1,25 @@
+/* Unity Penceresi Gizliyken Yer Kaplamasın */
+.gizli {
+    visibility: hidden;
+    position: absolute;
+    top: -9999px; /* Ekranın dışına atarak gizle */
+    left: -9999px;
+    width: 1px; /* Sıfır olmamalı */
+    height: 1px;
+}
+
+/* Unity Canvas Simsiyah Arka Plan */
+#unity-canvas { 
+    width: 100%; 
+    height: 100%; 
+    background: #222; 
+}
+
+/* Yükleniyor Rozeti Animasyonu */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

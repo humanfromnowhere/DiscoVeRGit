@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-800 via-purple-900 to-slate-900 flex items-center justify-center p-4 font-sans">
+
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">
+                <span class="text-amber-600">Disco</span><span class="text-slate-400">VeR</span>
+            </h1>
+            <p class="text-slate-500 mt-2 text-sm">Giriş Paneli</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Kullanıcı Adı</label>
+                <input type="text" id="kadi" class="w-full pl-4 pr-4 py-3 border-2 border-slate-200 rounded-lg focus:border-purple-600 focus:outline-none" placeholder="Adınız">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Şifre</label>
+                <input type="password" id="sifre" class="w-full pl-4 pr-4 py-3 border-2 border-slate-200 rounded-lg focus:border-purple-600 focus:outline-none" placeholder="Şifreniz">
+            </div>
+
+            <div id="hata" class="hidden bg-red-50 border-2 border-red-200 rounded-lg p-3 text-red-800 text-sm">
+                ❌ Hatalı kullanıcı adı veya şifre!
+            </div>
+
+            <button onclick="GirisYap()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-bold hover:opacity-90 transition-all shadow-lg">
+                Giriş Yap
+            </button>
+        </div>
+
+        <div class="mt-6 text-center text-xs text-slate-500">
+            <p>Admin: admin / 1234</p>
+            <p>User: user / 1234</p>
+        </div>
+    </div>
+
+    <script>
+        // İkonları çalıştır
+        lucide.createIcons();
+
+        // --- İŞTE YÖNLENDİRME YAPAN SİHİRLİ KOD ---
+        function GirisYap() {
+            // 1. Kutulardaki veriyi al
+            const k = document.getElementById("kadi").value.trim();
+            const s = document.getElementById("sifre").value.trim();
+            const hata = document.getElementById("hata");
+
+            // 2. Kontrol Et
+            if (k === "admin" && s === "1234") {
+                // Admin ise admin.html sayfasına GIT
+                window.location.href = "admin.html";
+            } 
+            else if (k === "user" && s === "1234") {
+                // User ise index.html sayfasına GIT
+                window.location.href = "index.html";
+            } 
+            else {
+                // Yanlışsa hata göster
+                hata.classList.remove('hidden');
+            }
+        }
+
+        // Enter tuşuna basınca da çalışsın
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') GirisYap();
+        });
+    </script>
+</body>
+</html>

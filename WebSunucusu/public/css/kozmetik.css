@@ -1,0 +1,52 @@
+/* --- GENEL AYARLAR --- */
+* { box-sizing: border-box; }
+body { 
+    margin: 0; padding: 0; overflow: hidden; 
+    background-color: #121212; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex; height: 100vh;
+}
+
+/* --- SOL MENÜ (SIDEBAR) --- */
+#sidebar-container {
+    width: 260px;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-right: 1px solid #333;
+    display: flex; flex-direction: column;
+    z-index: 10;
+}
+
+.sidebar-header { padding: 25px 20px; background: #252525; border-bottom: 1px solid #333; }
+.sidebar-header h1 { margin: 0; font-size: 20px; color: #00bcd4; }
+.sidebar-header p { margin: 5px 0 0 0; font-size: 12px; color: #aaa; }
+
+.menu-list { padding: 20px; flex-grow: 1; overflow-y: auto; }
+
+.menu-btn {
+    width: 100%; background: transparent; border: 1px solid #333; color: #ddd;
+    padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer;
+    text-align: left; display: flex; align-items: center; transition: 0.3s;
+}
+.menu-btn:hover { background-color: #333; padding-left: 20px; }
+.menu-btn.active { background-color: #00bcd4; color: #000; border-color: #00bcd4; font-weight: bold; }
+.menu-btn span { margin-right: 12px; font-size: 18px; }
+
+/* --- UNITY ALANI --- */
+#unity-container { flex-grow: 1; position: relative; background: #000; }
+canvas { width: 100% !important; height: 100% !important; display: block; }
+
+/* --- LOGIN EKRANI ÖZEL --- */
+.login-body { display: flex; justify-content: center; align-items: center; background: #000; }
+.login-box { 
+    width: 350px; padding: 40px; background: #1e1e1e; 
+    border-radius: 10px; text-align: center; border: 1px solid #333; 
+}
+.login-input { 
+    width: 100%; padding: 10px; margin: 10px 0; 
+    background: #333; border: none; color: white; border-radius: 5px; 
+}
+.login-btn { 
+    width: 100%; padding: 10px; background: #00bcd4; 
+    border: none; cursor: pointer; font-weight: bold; margin-top: 10px; 
+}
