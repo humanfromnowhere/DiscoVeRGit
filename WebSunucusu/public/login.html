@@ -6,6 +6,7 @@
     <title>Giriş Yap</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-800 via-purple-900 to-slate-900 flex items-center justify-center p-4 font-sans">
 
@@ -43,29 +44,45 @@
         </div>
     </div>
 
-    <script>
+     <script>
         // İkonları çalıştır
         lucide.createIcons();
 
-        // --- İŞTE YÖNLENDİRME YAPAN SİHİRLİ KOD ---
-        function GirisYap() {
-            // 1. Kutulardaki veriyi al
-            const k = document.getElementById("kadi").value.trim();
-            const s = document.getElementById("sifre").value.trim();
+        // 1. SUPABASE BAĞLANTISINI KURUYORUZ
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://pwvbclqgfngimozemcqn.supabase.co'; 
+        const supabaseKey = 'sb_publishable_-Vrcty6N0qeOC6IafJ4qvQ_QLLHK13L';
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        // 2. YENİ SUPABASE GİRİŞ FONKSİYONU
+        async function GirisYap() {
+            // Kutulardaki veriyi al (Kullanıcı adı yerine e-posta formatı kullanacağız)
+            const email = document.getElementById("kadi").value.trim(); 
+            const password = document.getElementById("sifre").value.trim();
             const hata = document.getElementById("hata");
 
-            // 2. Kontrol Et
-            if (k === "admin" && s === "1234") {
-                // Admin ise admin.html sayfasına GIT
-                window.location.href = "admin.html";
-            } 
-            else if (k === "user" && s === "1234") {
-                // User ise index.html sayfasına GIT
-                window.location.href = "index.html";
-            } 
-            else {
-                // Yanlışsa hata göster
+            // Hata mesajını başta gizle
+            hata.classList.add('hidden');
+
+            // 3. SUPABASE'E GİRİŞ İSTEĞİ AT
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                // Eğer şifre veya e-posta yanlışsa Supabase bize hata döndürür
+                hata.innerHTML = "❌ Giriş başarısız: Bilgilerinizi kontrol edin.";
                 hata.classList.remove('hidden');
+                console.error("Supabase Hatası:", error.message);
+            } else {
+                // 4. GİRİŞ BAŞARILIYSA YÖNLENDİRME YAP
+                // Giriş yapan kişinin admin mi user mı olduğunu e-postasına göre anlıyoruz
+                if (email === "admin@proje.com") {
+                    window.location.href = "admin.html";
+                } else {
+                    window.location.href = "index.html";
+                }
             }
         }
 
