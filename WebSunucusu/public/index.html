@@ -6,6 +6,7 @@
     <title>DiscoVeR - User Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="min-h-screen bg-slate-50 font-sans">
 
@@ -109,3 +110,91 @@
     <script src="js/objOkuyucu.js"></script>
     <script src="js/indexStart.js"></script> </body>
 </html>
+
+//levent eklemesi, 3d model yükleme .glb ve .gltf formatlarını destekleyecek
+
+<div class="mb-4">
+    <label class="block text-sm font-medium mb-2">3D Model Seç (.glb veya .gltf)</label>
+    <input type="file" id="modelDosyasi" accept=".glb,.gltf" class="border p-2 rounded w-full">
+</div>
+
+<button onclick="modeliSupabaseYukle()" class="bg-blue-600 text-white px-4 py-2 rounded">
+    Modeli Yükle
+</button>
+
+<div id="yuklemeDurumu" class="mt-4 text-sm font-bold"></div>
+
+//script kısmı
+
+<script>
+    
+const { createClient } = supabase;
+const supabaseUrl = 'https://pwvbclqgfngimozemcqn.supabase.co'; 
+const supabaseKey = 'sb_publishable_-Vrcty6N0qeOC6IafJ4qvQ_QLLHK13L';
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+async function modeliSupabaseYukle() {
+    const fileInput = document.getElementById('modelDosyasi');
+    const durumMetni = document.getElementById('yuklemeDurumu');
+
+    // 1. Dosya seçilmiş mi kontrol et
+    if (fileInput.files.length === 0) {
+        durumMetni.innerHTML = "❌ Lütfen önce bir model dosyası seçin!";
+        durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+        return;
+    }
+
+    const file = fileInput.files[0];
+    durumMetni.innerHTML = "⏳ Model Supabase Storage'a yükleniyor, lütfen bekleyin...";
+    durumMetni.className = "mt-4 text-sm font-bold text-blue-600";
+
+    try {
+        // 2. İsim Çakışmasını Önleme
+        // Aynı isimde iki dosya yüklenirse hata olmaması için dosya adının sonuna rastgele sayılar ekliyoruz.
+        const dosyaUzantisi = file.name.split('.').pop();
+        const benzersizDosyaAdi = `${Date.now()}-${Math.random().toString(36).substring(2)}.${dosyaUzantisi}`;
+
+        // 3. STORAGE'A YÜKLEME (3d-models kovasına)
+        const { data: storageData, error: storageError } = await supabaseClient
+            .storage
+            .from('3D-Models')
+            .upload(benzersizDosyaAdi, file);
+
+        if (storageError) throw storageError;
+
+        durumMetni.innerHTML = "⏳ Dosya yüklendi! Veritabanına kaydediliyor...";
+
+        // 4. DOSYANIN PUBLIC (AÇIK) URL'SİNİ ALMA
+        // Unity'nin bu modeli VR'da çekebilmesi için bu linke ihtiyacı var.
+        const { data: urlData } = supabaseClient
+            .storage
+            .from('3d-models')
+            .getPublicUrl(benzersizDosyaAdi);
+        
+        const modelPublicUrl = urlData.publicUrl;
+
+        // 5. DATABASE'E KAYDETME (uploaded_models tablosuna)
+        const { data: dbData, error: dbError } = await supabaseClient
+            .from('uploaded_models')
+            .insert([
+                { 
+                    model_name: file.name, 
+                    model_url: modelPublicUrl, 
+                    uploader_name: "Aktif Kullanici" // İleride burayı giriş yapan kişinin adıyla değiştireceğiz
+                }
+            ]);
+
+        if (dbError) throw dbError;
+
+        // Her şey başarılıysa:
+        durumMetni.innerHTML = "✅ Model başarıyla yüklendi ve veritabanına kaydedildi!";
+        durumMetni.className = "mt-4 text-sm font-bold text-green-600";
+        fileInput.value = ""; // İşlem bitince dosya seçiciyi temizle
+
+    } catch (hata) {
+        console.error("Yükleme Hatası:", hata);
+        durumMetni.innerHTML = "❌ Bir hata oluştu: " + hata.message;
+        durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+    }
+}
+</script>   
