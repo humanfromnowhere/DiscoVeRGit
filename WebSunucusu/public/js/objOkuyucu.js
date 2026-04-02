@@ -1,12 +1,7 @@
-// --- AYARLAR ---
-// Unity build dosyalarının olduğu klasör yolu
 const klasorYolu = "unity_dosyalari/Build/"; 
-// Build ismi (public veya c492 neyse onu yaz)
 const buildIsmi = "unity_dosyalari"; 
 
 var unityErisim = null;
-
-// Sayfa Yüklendiğinde Unity'yi Başlat
 document.addEventListener("DOMContentLoaded", function() {
     
     // Sadece Unity canvas varsa çalıştır

@@ -13,10 +13,13 @@
     <header class="bg-gradient-to-r from-slate-800 via-purple-900 to-slate-900 text-white shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md">
+                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md cursor-pointer hover:bg-slate-100 transition" onclick="mekanAra()">
                     <i data-lucide="search" class="text-purple-900 w-6 h-6"></i>
                 </div>
-                <div>
+                
+                <input type="text" id="searchInput" placeholder="Otel, okul veya mekan ara..." onkeypress="if(event.key === 'Enter') mekanAra()" class="px-4 py-2 rounded-lg text-slate-800 border-2 border-purple-300 focus:outline-none focus:border-amber-400 w-64 placeholder-slate-400 shadow-inner">
+                
+                <div class="ml-4">
                     <h1 class="text-xl font-bold leading-tight">
                         <span class="text-amber-400">Disco</span><span class="text-slate-200">VeR</span>
                     </h1>
@@ -26,7 +29,7 @@
             <div class="flex items-center gap-4">
                 <div class="text-right hidden sm:block">
                     <p class="text-sm font-semibold">user@discover.com</p>
-                    <p class="text-xs text-slate-300">Misafir Kullanıcı</p>
+                    <p class="text-xs text-slate-300">İşletme Sahibi</p>
                 </div>
                 <button id="btn-logout" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-md text-sm font-medium">
                     <i data-lucide="log-out" class="w-4 h-4"></i> Çıkış
@@ -48,153 +51,218 @@
 
         <div id="page-dashboard" class="space-y-6 animate-fade-in">
             <h2 class="text-3xl font-bold text-slate-800">Hoşgeldiniz!</h2>
+            
             <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100">
                 <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <i data-lucide="activity" class="w-5 h-5 text-slate-400"></i> Son Aktiviteler
+                    <i data-lucide="upload-cloud" class="w-5 h-5 text-purple-600"></i> Yeni Model Yükle
                 </h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                        <p class="font-semibold text-slate-800">Bambu Evi İncelendi</p>
-                        <span class="text-xs text-slate-500">Az önce</span>
-                    </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2 text-slate-700">Mekan Adı (Açıklama)</label>
+                    <input type="text" id="mekanAdiInput" placeholder="Ziyaretçilerin arayacağı ismi girin..." class="border border-slate-300 p-2 rounded-lg w-full focus:outline-none focus:border-purple-500">
                 </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2 text-slate-700">3D Model Seç (.glb veya .gltf)</label>
+                    <input type="file" id="modelDosyasi" accept=".glb,.gltf" class="border border-slate-300 p-2 rounded-lg w-full text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                    <p class="text-xs text-slate-500 mt-1">* Maksimum dosya boyutu: 50MB</p>
+                </div>
+
+                <button onclick="modeliSupabaseYukle()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all shadow-md">
+                    Modeli Yükle
+                </button>
+
+                <div id="yuklemeDurumu" class="mt-4 text-sm font-bold"></div>
+            </div>
+            
+            <div id="aramaSonucuAlan" class="hidden bg-green-50 rounded-xl shadow-md p-6 border border-green-200">
+                <h3 class="text-xl font-bold text-green-800 mb-2">Mekan Bulundu! 🎉</h3>
+                <div id="bulunanMekanDetay" class="text-green-700 font-medium"></div>
+                <p class="text-sm text-green-600 mt-2">(Bir sonraki adımda bu URL'yi alıp Unity'de açacağız)</p>
             </div>
         </div>
 
-        <div id="page-models" class="hidden space-y-6">
+        <div id="page-models" class="hidden space-y-6 animate-fade-in">
             <div class="flex items-center justify-between">
                 <h2 class="text-3xl font-bold text-slate-800">Model Listesi</h2>
-                <p class="text-slate-500">İncelemek için bir model seçin</p>
-            </div>
-
-            <div class="grid gap-4">
-                <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100 flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xl font-bold text-slate-800">🏡 Lüks Villa</h3>
-                        <span class="text-xs font-bold bg-green-100 text-green-800 px-2 py-1 rounded">Hazır</span>
-                    </div>
-                    <button data-model="villa.obj" class="btn-view-model bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 font-semibold shadow-md">
-                        <i data-lucide="eye" class="w-5 h-5"></i> İncele
-                    </button>
-                </div>
-                <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100 flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xl font-bold text-slate-800">🎋 Bambu Kulübe</h3>
-                        <span class="text-xs font-bold bg-green-100 text-green-800 px-2 py-1 rounded">Hazır</span>
-                    </div>
-                    <button data-model="bambu.obj" class="btn-view-model bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 font-semibold shadow-md">
-                        <i data-lucide="eye" class="w-5 h-5"></i> İncele
-                    </button>
-                </div>
-                 <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100 flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xl font-bold text-slate-800">🏙️ Şehir Meydanı</h3>
-                        <span class="text-xs font-bold bg-green-100 text-green-800 px-2 py-1 rounded">Hazır</span>
-                    </div>
-                    <button data-model="sokak.obj" class="btn-view-model bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 font-semibold shadow-md">
-                        <i data-lucide="eye" class="w-5 h-5"></i> İncele
-                    </button>
-                </div>
-            </div>
-
-            <div id="unity-wrapper" class="hidden mt-8 bg-black rounded-xl overflow-hidden shadow-2xl border-4 border-slate-800 relative">
-                <button id="btn-close-unity" class="absolute top-4 right-4 z-10 bg-red-600 text-white p-2 rounded-full hover:bg-red-700">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+                <button onclick="modelleriGetir()" class="text-purple-600 flex items-center gap-1 text-sm font-semibold">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Yenile
                 </button>
-                <canvas id="unity-canvas" class="w-full h-[600px] block"></canvas>
+            </div>
+            <div id="modelListesiGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <p class="text-center text-slate-500 py-8 col-span-full">Modeller yükleniyor...</p>
             </div>
         </div>
 
     </div>
 
-    <script src="js/objOkuyucu.js"></script>
-    <script src="js/indexStart.js"></script> </body>
+    <script>
+        // 1. SUPABASE BAĞLANTISI
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://pwvbclqgfngimozemcqn.supabase.co'; 
+        const supabaseKey = 'sb_publishable_-Vrcty6N0qeOC6IafJ4qvQ_QLLHK13L';
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        // BUCKET İSMİ (Büyük harf hatası düzeltildi)
+        const BUCKET_NAME = '3D-Models'; 
+
+        // 2. MODEL YÜKLEME FONKSİYONU
+        async function modeliSupabaseYukle() {
+            const mekanAdiInput = document.getElementById('mekanAdiInput');
+            const fileInput = document.getElementById('modelDosyasi');
+            const durumMetni = document.getElementById('yuklemeDurumu');
+
+            const mekanAdi = mekanAdiInput.value.trim();
+
+            if (!mekanAdi) {
+                durumMetni.innerHTML = "❌ Lütfen bir mekan adı girin!";
+                durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+                return;
+            }
+
+            if (fileInput.files.length === 0) {
+                durumMetni.innerHTML = "❌ Lütfen yüklenecek modeli seçin!";
+                durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const maxMB = 50; 
+            const fileSizeMB = file.size / (1024 * 1024);
+            
+            if (fileSizeMB > maxMB) {
+                durumMetni.innerHTML = `❌ Dosya çok büyük! (${fileSizeMB.toFixed(2)}MB)`;
+                durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+                return;
+            }
+
+            durumMetni.innerHTML = "⏳ Yükleniyor...";
+            durumMetni.className = "mt-4 text-sm font-bold text-blue-600";
+
+            try {
+                const dosyaUzantisi = file.name.split('.').pop();
+                const benzersizDosyaAdi = `${Date.now()}-${Math.random().toString(36).substring(2)}.${dosyaUzantisi}`;
+
+                // A. STORAGE YÜKLEME
+                const { data: storageData, error: storageError } = await supabaseClient
+                    .storage
+                    .from(BUCKET_NAME)
+                    .upload(benzersizDosyaAdi, file);
+
+                if (storageError) throw storageError;
+
+                // B. URL ALMA
+                const { data: urlData } = supabaseClient
+                    .storage
+                    .from(BUCKET_NAME)
+                    .getPublicUrl(benzersizDosyaAdi);
+                
+                const modelPublicUrl = urlData.publicUrl;
+
+                // C. DATABASE KAYIT (place_name yerine description kullanıldı)
+                const { data: dbData, error: dbError } = await supabaseClient
+                    .from('uploaded_models')
+                    .insert([
+                        { 
+                            description: mekanAdi,
+                            model_name: file.name, 
+                            model_url: modelPublicUrl, 
+                            uploader_name: "Aktif Kullanici" 
+                        }
+                    ]);
+
+                if (dbError) throw dbError;
+
+                durumMetni.innerHTML = "✅ Model başarıyla kaydedildi!";
+                durumMetni.className = "mt-4 text-sm font-bold text-green-600";
+                
+                mekanAdiInput.value = "";
+                fileInput.value = "";
+                modelleriGetir(); // Listeyi güncelle
+
+            } catch (hata) {
+                console.error("Hata detay:", hata);
+                durumMetni.innerHTML = "❌ Hata: " + hata.message;
+            }
+        }
+
+        // 3. MODELLERİ LİSTELEME FONKSİYONU
+        async function modelleriGetir() {
+            const listeAlan = document.getElementById('modelListesiGrid');
+            
+            const { data, error } = await supabaseClient
+                .from('uploaded_models')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) return;
+
+            if (data.length === 0) {
+                listeAlan.innerHTML = `<p class="col-span-full text-center text-slate-500 py-8">Henüz model bulunamadı.</p>`;
+                return;
+            }
+
+            listeAlan.innerHTML = data.map(model => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition">
+                    <div class="w-full h-32 bg-slate-100 rounded-lg mb-3 flex items-center justify-center">
+                        <i data-lucide="box" class="w-12 h-12 text-slate-300"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-800 truncate">${model.description || 'İsimsiz Mekan'}</h4>
+                    <p class="text-xs text-slate-500 mb-3 truncate">${model.model_name}</p>
+                    <a href="${model.model_url}" target="_blank" class="block text-center bg-slate-800 text-white py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition">URL Kopyala</a>
+                </div>
+            `).join('');
+            
+            lucide.createIcons();
+        }
+
+        // 4. ARAMA FONKSİYONU (place_name yerine description)
+        async function mekanAra() {
+            const aramaMetni = document.getElementById('searchInput').value.trim();
+            const sonucAlan = document.getElementById('aramaSonucuAlan');
+            const sonucDetay = document.getElementById('bulunanMekanDetay');
+
+            if (!aramaMetni) return;
+
+            const { data, error } = await supabaseClient
+                .from('uploaded_models')
+                .select('*')
+                .ilike('description', `%${aramaMetni}%`); 
+
+            if (data && data.length > 0) {
+                const m = data[0];
+                sonucAlan.classList.remove('hidden');
+                sonucDetay.innerHTML = `Mekan: <b>${m.description}</b> <br> Model: <span class="text-xs">${m.model_name}</span>`;
+            } else {
+                sonucAlan.classList.add('hidden');
+                alert("Mekan bulunamadı.");
+            }
+        }
+
+        // TAB KONTROLLERİ
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabDashboard = document.getElementById('tab-dashboard');
+            const tabModels = document.getElementById('tab-models');
+            const pageDashboard = document.getElementById('page-dashboard');
+            const pageModels = document.getElementById('page-models');
+
+            tabDashboard.onclick = () => {
+                pageDashboard.classList.remove('hidden');
+                pageModels.classList.add('hidden');
+                tabDashboard.className = "flex items-center gap-2 px-4 py-2 rounded-lg transition-all bg-purple-600 text-white";
+                tabModels.className = "flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-slate-600 hover:bg-slate-100";
+            };
+
+            tabModels.onclick = () => {
+                pageModels.classList.remove('hidden');
+                pageDashboard.classList.add('hidden');
+                tabModels.className = "flex items-center gap-2 px-4 py-2 rounded-lg transition-all bg-purple-600 text-white";
+                tabDashboard.className = "flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-slate-600 hover:bg-slate-100";
+                modelleriGetir();
+            };
+
+            lucide.createIcons();
+        });
+    </script>
+</body>
 </html>
-
-//levent eklemesi, 3d model yükleme .glb ve .gltf formatlarını destekleyecek
-
-<div class="mb-4">
-    <label class="block text-sm font-medium mb-2">3D Model Seç (.glb veya .gltf)</label>
-    <input type="file" id="modelDosyasi" accept=".glb,.gltf" class="border p-2 rounded w-full">
-</div>
-
-<button onclick="modeliSupabaseYukle()" class="bg-blue-600 text-white px-4 py-2 rounded">
-    Modeli Yükle
-</button>
-
-<div id="yuklemeDurumu" class="mt-4 text-sm font-bold"></div>
-
-//script kısmı
-
-<script>
-    
-const { createClient } = supabase;
-const supabaseUrl = 'https://pwvbclqgfngimozemcqn.supabase.co'; 
-const supabaseKey = 'sb_publishable_-Vrcty6N0qeOC6IafJ4qvQ_QLLHK13L';
-const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-async function modeliSupabaseYukle() {
-    const fileInput = document.getElementById('modelDosyasi');
-    const durumMetni = document.getElementById('yuklemeDurumu');
-
-    // 1. Dosya seçilmiş mi kontrol et
-    if (fileInput.files.length === 0) {
-        durumMetni.innerHTML = "❌ Lütfen önce bir model dosyası seçin!";
-        durumMetni.className = "mt-4 text-sm font-bold text-red-600";
-        return;
-    }
-
-    const file = fileInput.files[0];
-    durumMetni.innerHTML = "⏳ Model Supabase Storage'a yükleniyor, lütfen bekleyin...";
-    durumMetni.className = "mt-4 text-sm font-bold text-blue-600";
-
-    try {
-        // 2. İsim Çakışmasını Önleme
-        // Aynı isimde iki dosya yüklenirse hata olmaması için dosya adının sonuna rastgele sayılar ekliyoruz.
-        const dosyaUzantisi = file.name.split('.').pop();
-        const benzersizDosyaAdi = `${Date.now()}-${Math.random().toString(36).substring(2)}.${dosyaUzantisi}`;
-
-        // 3. STORAGE'A YÜKLEME (3d-models kovasına)
-        const { data: storageData, error: storageError } = await supabaseClient
-            .storage
-            .from('3D-Models')
-            .upload(benzersizDosyaAdi, file);
-
-        if (storageError) throw storageError;
-
-        durumMetni.innerHTML = "⏳ Dosya yüklendi! Veritabanına kaydediliyor...";
-
-        // 4. DOSYANIN PUBLIC (AÇIK) URL'SİNİ ALMA
-        // Unity'nin bu modeli VR'da çekebilmesi için bu linke ihtiyacı var.
-        const { data: urlData } = supabaseClient
-            .storage
-            .from('3d-models')
-            .getPublicUrl(benzersizDosyaAdi);
-        
-        const modelPublicUrl = urlData.publicUrl;
-
-        // 5. DATABASE'E KAYDETME (uploaded_models tablosuna)
-        const { data: dbData, error: dbError } = await supabaseClient
-            .from('uploaded_models')
-            .insert([
-                { 
-                    model_name: file.name, 
-                    model_url: modelPublicUrl, 
-                    uploader_name: "Aktif Kullanici" // İleride burayı giriş yapan kişinin adıyla değiştireceğiz
-                }
-            ]);
-
-        if (dbError) throw dbError;
-
-        // Her şey başarılıysa:
-        durumMetni.innerHTML = "✅ Model başarıyla yüklendi ve veritabanına kaydedildi!";
-        durumMetni.className = "mt-4 text-sm font-bold text-green-600";
-        fileInput.value = ""; // İşlem bitince dosya seçiciyi temizle
-
-    } catch (hata) {
-        console.error("Yükleme Hatası:", hata);
-        durumMetni.innerHTML = "❌ Bir hata oluştu: " + hata.message;
-        durumMetni.className = "mt-4 text-sm font-bold text-red-600";
-    }
-}
-</script>   
