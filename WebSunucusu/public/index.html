@@ -63,8 +63,8 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium mb-2 text-slate-700">3D Model Seç (.glb veya .gltf)</label>
-                    <input type="file" id="modelDosyasi" accept=".glb,.gltf" class="border border-slate-300 p-2 rounded-lg w-full text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                    <label class="block text-sm font-medium mb-2 text-slate-700">3D Model Seç (.glb, .gltf, .obj, .fbx)</label>
+                    <input type="file" id="modelDosyasi" accept=".glb,.gltf,.obj,.fbx" class="border border-slate-300 p-2 rounded-lg w-full text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
                     <p class="text-xs text-slate-500 mt-1">* Maksimum dosya boyutu: 50MB</p>
                 </div>
 
@@ -106,7 +106,7 @@
         // BUCKET İSMİ (Büyük harf hatası düzeltildi)
         const BUCKET_NAME = '3D-Models'; 
 
-        // 2. MODEL YÜKLEME FONKSİYONU
+        // 2. MODEL YÜKLEME FONKSİYONU (GÜNCELLENMİŞ - CONVERSION EKLENDİ)
         async function modeliSupabaseYukle() {
             const mekanAdiInput = document.getElementById('mekanAdiInput');
             const fileInput = document.getElementById('modelDosyasi');
@@ -115,13 +115,13 @@
             const mekanAdi = mekanAdiInput.value.trim();
 
             if (!mekanAdi) {
-                durumMetni.innerHTML = "❌ Lütfen bir mekan adı girin!";
+                durumMetni.innerHTML = " Lütfen bir mekan adı girin!";
                 durumMetni.className = "mt-4 text-sm font-bold text-red-600";
                 return;
             }
 
             if (fileInput.files.length === 0) {
-                durumMetni.innerHTML = "❌ Lütfen yüklenecek modeli seçin!";
+                durumMetni.innerHTML = "â Lütfen yüklenecek modeli seçin!";
                 durumMetni.className = "mt-4 text-sm font-bold text-red-600";
                 return;
             }
@@ -131,49 +131,85 @@
             const fileSizeMB = file.size / (1024 * 1024);
             
             if (fileSizeMB > maxMB) {
-                durumMetni.innerHTML = `❌ Dosya çok büyük! (${fileSizeMB.toFixed(2)}MB)`;
+                durumMetni.innerHTML = `â Dosya çok büyük! (${fileSizeMB.toFixed(2)}MB)`;
                 durumMetni.className = "mt-4 text-sm font-bold text-red-600";
                 return;
             }
 
-            durumMetni.innerHTML = "⏳ Yükleniyor...";
+            durumMetni.innerHTML = "â³ İşleniyor...";
             durumMetni.className = "mt-4 text-sm font-bold text-blue-600";
 
             try {
-                const dosyaUzantisi = file.name.split('.').pop();
-                const benzersizDosyaAdi = `${Date.now()}-${Math.random().toString(36).substring(2)}.${dosyaUzantisi}`;
+                let finalFile = file;
+                let originalFormat = file.name.split('.').pop().toLowerCase();
+
+                // Check if conversion is needed
+                if (!['.glb', '.gltf'].includes('.' + originalFormat)) {
+                    durumMetni.innerHTML = "ðŸ”ƒ Model dönüştürülüyor...";
+                    
+                    // Send file to server for conversion
+                    const formData = new FormData();
+                    formData.append('model', file);
+                    formData.append('originalName', file.name);
+                    formData.append('outputFormat', 'glb'); // Default to GLB for better compression
+
+                    const conversionResponse = await fetch('/convert-model', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!conversionResponse.ok) {
+                        const errorData = await conversionResponse.json();
+                        throw new Error(`Conversion failed: ${errorData.error}`);
+                    }
+
+                    const conversionResult = await conversionResponse.json();
+                    
+                    // Create new file from converted data
+                    const response = await fetch(conversionResult.url);
+                    const blob = await response.blob();
+                    finalFile = new File([blob], conversionResult.filename, { type: 'model/gltf-binary' });
+                    
+                    durumMetni.innerHTML = "â… Dönüştürme tamamlandı, yüklüyor...";
+                }
 
                 // A. STORAGE YÜKLEME
+                const dosyaUzantisi = finalFile.name.split('.').pop();
+                const benzersizDosyaAdi = `${Date.now()}-${Math.random().toString(36).substring(2)}.${dosyaUzantisi}`;
+
                 const { data: storageData, error: storageError } = await supabaseClient
                     .storage
                     .from(BUCKET_NAME)
-                    .upload(benzersizDosyaAdi, file);
+                    .upload(benzersizDosyaAdi, finalFile);
 
                 if (storageError) throw storageError;
 
                 // B. URL ALMA
-                const { data: urlData } = supabaseClient
+                const { data: urlData } = await supabaseClient
                     .storage
                     .from(BUCKET_NAME)
                     .getPublicUrl(benzersizDosyaAdi);
                 
                 const modelPublicUrl = urlData.publicUrl;
 
-                // C. DATABASE KAYIT (place_name yerine description kullanıldı)
+                // C. DATABASE KAYIT
                 const { data: dbData, error: dbError } = await supabaseClient
                     .from('uploaded_models')
                     .insert([
                         { 
                             description: mekanAdi,
-                            model_name: file.name, 
+                            model_name: file.name, // Original filename
                             model_url: modelPublicUrl, 
-                            uploader_name: "Aktif Kullanici" 
+                            uploader_name: "Aktif Kullanici",
+                            original_format: originalFormat,
+                            converted_format: dosyaUzantisi,
+                            file_size: finalFile.size
                         }
                     ]);
 
                 if (dbError) throw dbError;
 
-                durumMetni.innerHTML = "✅ Model başarıyla kaydedildi!";
+                durumMetni.innerHTML = "â… Model başarıyla kaydedildi!";
                 durumMetni.className = "mt-4 text-sm font-bold text-green-600";
                 
                 mekanAdiInput.value = "";
@@ -182,7 +218,8 @@
 
             } catch (hata) {
                 console.error("Hata detay:", hata);
-                durumMetni.innerHTML = "❌ Hata: " + hata.message;
+                durumMetni.innerHTML = "â Hata: " + hata.message;
+                durumMetni.className = "mt-4 text-sm font-bold text-red-600";
             }
         }
 

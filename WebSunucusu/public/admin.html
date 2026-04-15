@@ -56,11 +56,27 @@
 
         <div id="page-upload" class="hidden space-y-6">
             <h2 class="text-3xl font-bold text-slate-800">Yeni Model Ekle</h2>
-            <div class="bg-white rounded-xl shadow-md p-12 border-4 border-dashed border-slate-300 text-center hover:border-amber-500 transition-colors cursor-pointer">
-                <i data-lucide="upload-cloud" class="w-16 h-16 text-slate-400 mx-auto mb-4"></i>
-                <h3 class="text-xl font-bold text-slate-700">Dosyayı Buraya Sürükleyin</h3>
-                <p class="text-slate-500 mb-6">FBX veya OBJ formatı</p>
-                <button class="bg-amber-600 text-white px-8 py-3 rounded-lg font-bold">Dosya Seç</button>
+            <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+                <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i data-lucide="upload-cloud" class="w-5 h-5 text-amber-600"></i> Admin Model Yükle
+                </h3>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2 text-slate-700">Mekan Adı (Açıklama)</label>
+                    <input type="text" id="adminMekanAdiInput" placeholder="Ziyaretçilerin arayacağı ismi girin..." class="border border-slate-300 p-2 rounded-lg w-full focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2 text-slate-700">3D Model Seç (.glb, .gltf, .obj, .fbx)</label>
+                    <input type="file" id="adminModelDosyasi" accept=".glb,.gltf,.obj,.fbx" class="border border-slate-300 p-2 rounded-lg w-full text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                    <p class="text-xs text-slate-500 mt-1">* Maksimum dosya boyutu: 50MB | OBJ/FBX otomatik olarak GLB'ye dönüştürülecek</p>
+                </div>
+
+                <button onclick="adminModeliSupabaseYukle()" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-semibold transition-all shadow-md">
+                    Modeli Yükle
+                </button>
+
+                <div id="adminYuklemeDurumu" class="mt-4 text-sm font-bold"></div>
             </div>
         </div>
 
@@ -86,6 +102,133 @@
 
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/objOkuyucu.js"></script>
-    <script src="js/adminStart.js"></script> </body>
+    <script src="js/adminStart.js"></script>
+    
+    <script>
+        // SUPABASE BAĞLANTISI
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://pwvbclqgfngimozemcqn.supabase.co'; 
+        const supabaseKey = 'sb_publishable_-Vrcty6N0qeOC6IafJ4qvQ_QLLHK13L';
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+        const BUCKET_NAME = '3D-Models'; 
+
+        // ADMIN MODEL YÜKLEME FONKSİYONU
+        async function adminModeliSupabaseYukle() {
+            const mekanAdiInput = document.getElementById('adminMekanAdiInput');
+            const fileInput = document.getElementById('adminModelDosyasi');
+            const durumMetni = document.getElementById('adminYuklemeDurumu');
+
+            const mekanAdi = mekanAdiInput.value.trim();
+
+            if (!mekanAdi) {
+                durumMetni.innerHTML = " Lütfen bir mekan adı girin!";
+                durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+                return;
+            }
+
+            if (fileInput.files.length === 0) {
+                durumMetni.innerHTML = " Lütfen yüklenecek modeli seçin!";
+                durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const maxMB = 50; 
+            const fileSizeMB = file.size / (1024 * 1024);
+            
+            if (fileSizeMB > maxMB) {
+                durumMetni.innerHTML = ` Dosya çok büyük! (${fileSizeMB.toFixed(2)}MB)`;
+                durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+                return;
+            }
+
+            durumMetni.innerHTML = " İşleniyor...";
+            durumMetni.className = "mt-4 text-sm font-bold text-blue-600";
+
+            try {
+                let finalFile = file;
+                let originalFormat = file.name.split('.').pop().toLowerCase();
+
+                // Check if conversion is needed
+                if (!['.glb', '.gltf'].includes('.' + originalFormat)) {
+                    durumMetni.innerHTML = " Model dönüştürülüyor...";
+                    
+                    // Send file to server for conversion
+                    const formData = new FormData();
+                    formData.append('model', file);
+                    formData.append('originalName', file.name);
+                    formData.append('outputFormat', 'glb');
+
+                    const conversionResponse = await fetch('/convert-model', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!conversionResponse.ok) {
+                        const errorData = await conversionResponse.json();
+                        throw new Error(`Conversion failed: ${errorData.error}`);
+                    }
+
+                    const conversionResult = await conversionResponse.json();
+                    
+                    // Create new file from converted data
+                    const response = await fetch(conversionResult.url);
+                    const blob = await response.blob();
+                    finalFile = new File([blob], conversionResult.filename, { type: 'model/gltf-binary' });
+                    
+                    durumMetni.innerHTML = " Dönüştürme tamamlandı, yükleniyor...";
+                }
+
+                // STORAGE YÜKLEME
+                const dosyaUzantisi = finalFile.name.split('.').pop();
+                const benzersizDosyaAdi = `${Date.now()}-${Math.random().toString(36).substring(2)}.${dosyaUzantisi}`;
+
+                const { data: storageData, error: storageError } = await supabaseClient
+                    .storage
+                    .from(BUCKET_NAME)
+                    .upload(benzersizDosyaAdi, finalFile);
+
+                if (storageError) throw storageError;
+
+                // URL ALMA
+                const { data: urlData } = await supabaseClient
+                    .storage
+                    .from(BUCKET_NAME)
+                    .getPublicUrl(benzersizDosyaAdi);
+                
+                const modelPublicUrl = urlData.publicUrl;
+
+                // DATABASE KAYIT
+                const { data: dbData, error: dbError } = await supabaseClient
+                    .from('uploaded_models')
+                    .insert([
+                        { 
+                            description: mekanAdi,
+                            model_name: file.name,
+                            model_url: modelPublicUrl, 
+                            uploader_name: "Admin",
+                            original_format: originalFormat,
+                            converted_format: dosyaUzantisi,
+                            file_size: finalFile.size
+                        }
+                    ]);
+
+                if (dbError) throw dbError;
+
+                durumMetni.innerHTML = " Model başarıyla kaydedildi!";
+                durumMetni.className = "mt-4 text-sm font-bold text-green-600";
+                
+                mekanAdiInput.value = "";
+                fileInput.value = "";
+
+            } catch (hata) {
+                console.error("Hata detay:", hata);
+                durumMetni.innerHTML = " Hata: " + hata.message;
+                durumMetni.className = "mt-4 text-sm font-bold text-red-600";
+            }
+        }
+    </script>
+</body>
 </html>
