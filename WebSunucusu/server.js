@@ -38,8 +38,21 @@ app.post('/convert-model', upload.single('model'), async (req, res) => {
         }
 
         const { originalName, outputFormat = 'glb' } = req.body;
+        const fileExtension = path.extname(originalName).toLowerCase();
         
-        // Check if conversion is needed
+        // Bypass conversion for FBX files - return as-is
+        if (fileExtension === '.fbx') {
+            console.log('FBX file detected, bypassing conversion');
+            return res.json({
+                success: true,
+                url: `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`,
+                filename: originalName,
+                converted: false,
+                bypassed: true
+            });
+        }
+        
+        // Check if conversion is needed for other formats
         if (!modelConverter.needsConversion(originalName)) {
             // Return original file if no conversion needed
             return res.json({
